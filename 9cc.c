@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 // トークンの型を表す値
 enum {
@@ -34,6 +35,8 @@ typedef struct Node {
 // トークナイズした結果のトークン列はこの配列に保存する
 // 100個以上のトークンは来ないものとする
 Token tokens[100];
+
+// トークンの読み取り位置
 int pos = 0;
 
 // エラーを報告するための関数
@@ -61,7 +64,7 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
