@@ -246,6 +246,11 @@ void gen(Node *node) {
     printf("  sete al\n");
     printf("  movzb rax, al\n");
     break;
+  case TK_NE:
+    printf("  cmp rax, rdi\n");
+    printf("  setne al\n");
+    printf("  movzb rax, al\n");
+    break;
   case '+':
     printf("  add rax, rdi\n");
     break;
