@@ -9,6 +9,10 @@
 // トークンの型を表す値
 enum {
   TK_NUM = 256, // 整数トークン
+  TK_EQ,        // EQual
+  TK_NE,        // Not Equal
+  TK_LE,        // Less than or Equal
+  TK_GE,        // Greater than or Equal
   TK_EOF,       // 入力の終わりを表すトークン
 };
 
@@ -54,6 +58,9 @@ Node *term();
 Node *mul();
 Node *add();
 Node *unary();
+Node *expr();
+Node *equality();
+Node *relational();
 
 // pが指している文字列をトークンに分割してtokensに保存する
 void tokenize(char *p) {
@@ -65,8 +72,30 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
-        *p == '(' || *p == ')') {
+    if (!strncmp(p, "==", 2)) {
+      tokens[i].ty = TK_EQ;
+      tokens[i].input = p;
+      p += 2;
+      i++;
+      continue;
+    } else if (!strncmp(p, "!=", 2)) {
+      tokens[i].ty = TK_NE;
+      p += 2;
+      i++;
+      continue;
+    } else if (!strncmp(p, "<=", 2)) {
+      tokens[i].ty = TK_LE;
+      p += 2;
+      i++;
+      continue;
+    } else if (!strncmp(p, ">=", 2)) {
+      tokens[i].ty = TK_GE;
+      p += 2;
+      i++;
+      continue;
+    }
+
+    if (strchr("+-*/()<>", *p)) {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
@@ -110,6 +139,41 @@ int consume(int ty) {
     return 0;
   pos++;
   return 1;
+}
+
+Node *expr() {
+  Node *node = equality();
+  return node;
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  for (;;) {
+    if (consume(TK_EQ))
+      node = new_node(TK_EQ, node, relational());
+    else if (consume(TK_NE))
+      node = new_node(TK_NE, node, relational());
+    else
+      return node;
+  }
+}
+
+Node *relational() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume('<'))
+      node = new_node('<', node, add());
+    else if (consume(TK_LE))
+      node = new_node(TK_LE, node, add());
+    else if (consume('>'))
+      node = new_node('>', node, add());
+    else if (consume(TK_GE))
+      node = new_node(TK_GE, node, add());
+    else
+      return node;
+  }
 }
 
 Node *term() {
@@ -177,6 +241,11 @@ void gen(Node *node) {
   printf("  pop rax\n");
 
   switch (node->ty) {
+  case TK_EQ:
+    printf("  cmp rax, rdi\n");
+    printf("  sete al\n");
+    printf("  movzb rax, al\n");
+    break;
   case '+':
     printf("  add rax, rdi\n");
     break;
@@ -202,7 +271,7 @@ int main(int argc, char **argv) {
 
   // トークナイズしてパースする
   tokenize(argv[1]);
-  Node *node = add();
+  Node *node = expr();
 
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
