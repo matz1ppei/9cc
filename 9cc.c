@@ -168,9 +168,9 @@ Node *relational() {
     else if (consume(TK_LE))
       node = new_node(TK_LE, node, add());
     else if (consume('>'))
-      node = new_node('>', node, add());
+      node = new_node('<', add(), node);
     else if (consume(TK_GE))
-      node = new_node(TK_GE, node, add());
+      node = new_node(TK_LE, add(), node);
     else
       return node;
   }
